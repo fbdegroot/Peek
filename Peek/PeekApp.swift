@@ -52,6 +52,7 @@ struct PeekApp: App {
     }
 }
 
+@MainActor
 private final class CheckForUpdatesViewModel: ObservableObject {
     @Published var canCheckForUpdates = false
 
