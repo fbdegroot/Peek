@@ -5,5 +5,17 @@
         <link>https://raw.githubusercontent.com/fbdegroot/Peek/main/Releases/appcast.xml</link>
         <description>Latest Peek releases</description>
         <language>en</language>
+        <item>
+            <title>Version 1.2.1</title>
+            <pubDate>Tue, 05 May 2026 12:05:00 +0000</pubDate>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>1.2.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <enclosure
+                url="https://github.com/fbdegroot/Peek/releases/download/v1.2.1/Peek-1.2.1.dmg"
+                length="1928311"
+                type="application/octet-stream"
+                sparkle:edSignature="n9iS4sV7Sz/aufZ2GkNeqEBg8604bonAbQyJgen+IH4Nhnjhnni/vmNhteSsJngwyGRf4bSa3lY0JQAIGfbdCA=="/>
+        </item>
     </channel>
 </rss>

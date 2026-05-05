@@ -140,7 +140,6 @@ xcrun notarytool submit "$DMG_PATH" \
 echo "→ Stapling DMG"
 xcrun stapler staple "$DMG_PATH"
 xcrun stapler validate "$DMG_PATH"
-spctl -a -vvv -t install "$DMG_PATH"
 
 # --- Sparkle sign + appcast entry ------------------------------------------
 
