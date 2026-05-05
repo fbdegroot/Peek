@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 enum PanMouseButton: String, CaseIterable, Identifiable {
     case left, right, middle
@@ -101,12 +102,77 @@ final class AppSettings {
     }
 }
 
+@MainActor
+@Observable
+final class DefaultAppCoordinator {
+    static let supportedTypes: [UTType] = [
+        .png, .jpeg, .heic, .heif, .webP, .gif, .tiff, .bmp, .svg, .pdf
+    ]
+
+    private(set) var defaultCount: Int = 0
+    private(set) var isUpdating: Bool = false
+    var totalCount: Int { Self.supportedTypes.count }
+
+    func refresh() {
+        let myBundleID = Bundle.main.bundleIdentifier
+        defaultCount = Self.supportedTypes.filter { type in
+            guard let url = NSWorkspace.shared.urlForApplication(toOpen: type),
+                  let bundle = Bundle(url: url) else { return false }
+            return bundle.bundleIdentifier == myBundleID
+        }.count
+    }
+
+    func setAsDefault() async {
+        isUpdating = true
+        defer { isUpdating = false }
+        let bundleURL = Bundle.main.bundleURL
+        for type in Self.supportedTypes {
+            try? await NSWorkspace.shared.setDefaultApplication(at: bundleURL, toOpen: type)
+        }
+        refresh()
+    }
+}
+
 struct SettingsView: View {
     @Bindable private var settings = AppSettings.shared
+    @State private var defaults = DefaultAppCoordinator()
+
+    private var defaultsStatusText: String {
+        switch defaults.defaultCount {
+        case defaults.totalCount:
+            return "Peek opent alle ondersteunde bestanden."
+        case 0:
+            return "Peek is voor geen enkel bestandstype de standaard."
+        default:
+            return "Peek opent \(defaults.defaultCount) van \(defaults.totalCount) ondersteunde bestandstypen."
+        }
+    }
 
     var body: some View {
         Form {
-            Section("Pannen (slepen om te verplaatsen)") {
+            Section {
+                LabeledContent("PDF's en afbeeldingen") {
+                    if defaults.defaultCount == defaults.totalCount {
+                        Label("Gekoppeld", systemImage: "checkmark.circle.fill")
+                            .labelStyle(.titleAndIcon)
+                            .foregroundStyle(.green)
+                    } else {
+                        Button("Maak standaard") {
+                            Task { await defaults.setAsDefault() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(defaults.isUpdating)
+                    }
+                }
+            } header: {
+                Text("Standaard viewer")
+            } footer: {
+                Text(defaultsStatusText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Pannen") {
                 Picker("Muisknop", selection: $settings.panMouseButton) {
                     ForEach(PanMouseButton.allCases) { button in
                         Text(button.displayName).tag(button)
@@ -119,8 +185,8 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Zoomen met scrollen") {
-                Picker("Modifier", selection: $settings.zoomModifier) {
+            Section("Zoomen") {
+                Picker("Modifier bij scrollen", selection: $settings.zoomModifier) {
                     ForEach(KeyboardModifier.allCases) { modifier in
                         Text(modifier.displayName).tag(modifier)
                     }
@@ -128,6 +194,9 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460, height: 260)
+        .scrollDisabled(true)
+        .scrollIndicators(.hidden)
+        .frame(width: 480, height: 440)
+        .onAppear { defaults.refresh() }
     }
 }

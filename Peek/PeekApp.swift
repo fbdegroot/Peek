@@ -230,6 +230,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var openWindow: OpenWindowAction?
     private var pendingURLs: [URL] = []
     private var registeredModels: [WeakModel] = []
+    private var lastClosedWasSettings = false
+
+    override init() {
+        super.init()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowWillClose(_:)),
+            name: NSWindow.willCloseNotification,
+            object: nil
+        )
+    }
+
+    @objc private func windowWillClose(_ note: Notification) {
+        guard let window = note.object as? NSWindow else { return }
+        lastClosedWasSettings = window.isSettingsWindow
+    }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
         for url in urls {
@@ -283,7 +299,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        true
+        // Closing the Settings window shouldn't quit the app; only document window
+        // closes count toward termination.
+        !lastClosedWasSettings
+    }
+}
+
+private extension NSWindow {
+    var isSettingsWindow: Bool {
+        identifier?.rawValue.lowercased().contains("settings") == true
+            || frameAutosaveName.lowercased().contains("settings")
     }
 }
 
