@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1F4F19B82FAA12470034EB76 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 1F4F19B72FAA12470034EB76 /* Sparkle */; };
 		A1A1A1A1A1A1A1A1A1A1A701 /* PeekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1A1A1A1A1A1A1A1A601 /* PeekApp.swift */; };
 		A1A1A1A1A1A1A1A1A1A1A702 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1A1A1A1A1A1A1A1A602 /* AppModel.swift */; };
 		A1A1A1A1A1A1A1A1A1A1A703 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A1A1A1A1A1A1A1A1A1A603 /* ContentView.swift */; };
@@ -37,6 +38,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1F4F19B82FAA12470034EB76 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -120,6 +122,9 @@
 				Base,
 			);
 			mainGroup = A1A1A1A1A1A1A1A1A1A1A102;
+			packageReferences = (
+				1F4F19B62FAA12470034EB76 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = A1A1A1A1A1A1A1A1A1A1A104 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -361,6 +366,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1F4F19B62FAA12470034EB76 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1F4F19B72FAA12470034EB76 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1F4F19B62FAA12470034EB76 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A1A1A1A1A1A1A1A1A1A1A101 /* Project object */;
 }
