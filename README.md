@@ -2,11 +2,15 @@
 
 A fast, minimal native macOS viewer for images and PDFs. Mouse-driven zoom and pan, the way design tools do it.
 
+## Install
+
+Download the latest DMG from [Releases](https://github.com/fbdegroot/Peek/releases/latest), open it, and drag `Peek.app` to `/Applications`. The app is signed with a Developer ID and notarized by Apple, and updates itself automatically through Sparkle.
+
 ## Requirements
 
 - macOS 15 (Sequoia) or later
 - Apple Silicon
-- Xcode 16+ to build
+- Xcode 16+ to build from source
 
 ## Build
 
