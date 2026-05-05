@@ -59,20 +59,18 @@ rm -rf "$ARCHIVE_PATH" "$EXPORT_PATH"
 # --- Build & archive --------------------------------------------------------
 
 echo "→ Archiving"
-xcodebuild \
-    -project "$PROJECT" \
-    -scheme "$SCHEME" \
-    -configuration Release \
-    -archivePath "$ARCHIVE_PATH" \
-    -destination "generic/platform=macOS" \
-    archive \
-    | xcbeautify --quiet || xcodebuild \
-    -project "$PROJECT" \
-    -scheme "$SCHEME" \
-    -configuration Release \
-    -archivePath "$ARCHIVE_PATH" \
-    -destination "generic/platform=macOS" \
-    archive
+ARCHIVE_LOG="$ARTIFACTS/archive.log"
+if ! xcodebuild \
+        -project "$PROJECT" \
+        -scheme "$SCHEME" \
+        -configuration Release \
+        -archivePath "$ARCHIVE_PATH" \
+        -destination "generic/platform=macOS" \
+        archive >"$ARCHIVE_LOG" 2>&1; then
+    echo "✗ Archive failed. Last 60 log lines:"
+    tail -n 60 "$ARCHIVE_LOG"
+    exit 1
+fi
 
 # --- Export the .app --------------------------------------------------------
 
