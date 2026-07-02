@@ -15,9 +15,20 @@ struct PDFViewerRepresentable: NSViewRepresentable {
         view.backgroundColor = NSColor(white: 0.22, alpha: 1.0)
         view.minScaleFactor = 0.05
         view.maxScaleFactor = 64.0
-        view.pageShadowsEnabled = false
-        view.displaysPageBreaks = false
-        view.pageBreakMargins = NSEdgeInsetsZero
+        // Preview-style page separation: each page sits on the gray backdrop
+        // with a drop shadow and a gray gap between consecutive pages. The gap
+        // is vertical only (top/bottom) — the page still fills the viewport
+        // width flush to both edges, so there's no horizontal dark frame and no
+        // sideways overflow. `fitToWindow` fits the page width exactly, and the
+        // extra top/bottom margins become the visible canvas between pages.
+        view.pageShadowsEnabled = true
+        view.displaysPageBreaks = true
+        view.pageBreakMargins = NSEdgeInsets(
+            top: PeekPDFView.pageGutter,
+            left: 0,
+            bottom: PeekPDFView.pageGutter,
+            right: 0
+        )
         view.onNavigate = { [weak model] direction in
             model?.navigate(direction)
         }
@@ -75,6 +86,13 @@ struct PDFViewerRepresentable: NSViewRepresentable {
 }
 
 final class PeekPDFView: PDFView {
+    /// Height of the gray gap drawn above and below every page (fed into
+    /// `pageBreakMargins`). Only the vertical gap is used, so the space appears
+    /// as canvas *between* consecutive pages while each page still spans the
+    /// full viewport width. The visible gap between two pages is twice this
+    /// (bottom margin of one + top margin of the next).
+    static let pageGutter: CGFloat = 7
+
     var onNavigate: ((NavigationDirection) -> Void)?
 
     private var hasFittedOnce = false
@@ -272,38 +290,33 @@ final class PeekPDFView: PDFView {
 
     func fitToWindow() {
         guard let document, let firstPage = document.page(at: 0) else { return }
-        let pageBox = firstPage.bounds(for: .mediaBox)
-        let widthScale = bounds.width / pageBox.width
-        let heightScale = bounds.height / pageBox.height
-        let isPortrait = pageBox.height >= pageBox.width
-        scaleFactor = isPortrait ? widthScale : heightScale
+        // Use the crop box — that's what PDFKit actually renders, so fitting to
+        // the media box would leave the page looking slightly off / zoomed.
+        let pageBox = firstPage.bounds(for: .cropBox)
+        guard pageBox.width > 0, pageBox.height > 0 else { return }
+        // Fit to width: the page fills the viewport width flush to both edges
+        // (no gray margins), and you scroll down through the pages. The window
+        // is auto-sized to the page's aspect ratio on open, so the whole first
+        // page is visible too — but on any other window shape there's still no
+        // dark frame, only the gap *between* pages.
+        scaleFactor = bounds.width / pageBox.width
         layoutSubtreeIfNeeded()
-        go(to: PDFDestination(page: firstPage, at: NSPoint(x: 0, y: pageBox.height)))
-        snapToDocumentTop()
+        snapToPageTop(firstPage)
     }
 
-    /// PDFKit's documentView often has padding above the first page; snapping
-    /// to documentView's frame top leaves a visible gap. Instead, ask PDFKit
-    /// where page 1's top actually is in clipView coords, and put viewport top
-    /// exactly there.
-    private func snapToDocumentTop() {
-        guard let scrollView = pdfScrollView,
-              let docView = scrollView.documentView,
-              let document,
-              let firstPage = document.page(at: 0) else { return }
+    /// Scroll so page 1's top-left corner sits at the viewport's top-left,
+    /// hiding the top page-break margin PDFKit reserves above the first page
+    /// (otherwise it shows as a dark band at the very top). When the page is
+    /// narrower than the viewport (wider window), centering keeps it balanced.
+    private func snapToPageTop(_ page: PDFPage) {
+        guard let scrollView = pdfScrollView, let docView = scrollView.documentView else { return }
         let clip = scrollView.contentView
-        let pageH = firstPage.bounds(for: .mediaBox).height
-        let pageTopInPDFView = self.convert(NSPoint(x: 0, y: pageH), from: firstPage)
-        let pageTopInDoc = docView.convert(pageTopInPDFView, from: self)
-        let viewSize = clip.bounds.size
-
-        let originY: CGFloat
-        if clip.isFlipped {
-            originY = pageTopInDoc.y
-        } else {
-            originY = pageTopInDoc.y - viewSize.height
-        }
-        clip.setBoundsOrigin(NSPoint(x: clip.bounds.origin.x, y: originY))
+        let cropBox = page.bounds(for: .cropBox)
+        let pageTopInSelf = convert(NSPoint(x: cropBox.minX, y: cropBox.maxY), from: page)
+        let pageTopInDoc = docView.convert(pageTopInSelf, from: self)
+        let originY = clip.isFlipped ? pageTopInDoc.y : pageTopInDoc.y - clip.bounds.height
+        let originX = max(0, (docView.frame.width - clip.bounds.width) / 2)
+        clip.setBoundsOrigin(NSPoint(x: originX, y: originY))
         scrollView.reflectScrolledClipView(clip)
     }
 

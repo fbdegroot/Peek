@@ -262,30 +262,41 @@ final class AppModel {
     }
 
     private func resizeWindowToContent(of url: URL) {
-        // If we already restored a remembered frame for this window, leave it
-        // alone — the user's chosen size wins over fit-to-content.
-        guard !hasRestoredFrame else { return }
         guard let window = mainWindow,
               let size = contentSize(of: url),
+              size.width > 0, size.height > 0,
               let screen = window.screen ?? NSScreen.main else { return }
         let visible = screen.visibleFrame
         let maxW = visible.width * 0.9
         let maxH = visible.height * 0.9
-        var w = size.width
-        var h = size.height
-        if w > maxW { let r = maxW / w; w = maxW; h *= r }
-        if h > maxH { let r = maxH / h; h = maxH; w *= r }
-        // Comfortable first-time minimum — A4 at native scale used to fit in
-        // 595×842, which felt cramped. Bump the floor so PDFs and most images
-        // open in a window large enough to read without immediately resizing.
-        let minW = min(800, maxW)
-        let minH = min(1000, maxH)
-        let contentRect = NSRect(x: 0, y: 0, width: max(w, minW), height: max(h, minH))
+        let aspect = size.width / size.height
+
+        // Always match the window's *width* to the page so it fills the window
+        // without gray margins left/right. Height: if the user already has a
+        // preferred window size (a remembered frame), keep that height and just
+        // re-shape the width to the page; otherwise pick a comfortable reading
+        // height. A4 at native scale (595×842) felt cramped, hence 1000.
+        let currentContent = window.contentRect(forFrameRect: window.frame)
+        var h = hasRestoredFrame ? currentContent.height : min(1000, maxH)
+        var w = h * aspect
+        // Clamp to the screen, preserving aspect ratio.
+        if w > maxW { w = maxW; h = w / aspect }
+        if h > maxH { h = maxH; w = h * aspect }
+
+        let contentRect = NSRect(x: 0, y: 0, width: w, height: h)
         let frameRect = window.frameRect(forContentRect: contentRect)
-        let origin = NSPoint(
-            x: visible.midX - frameRect.width / 2,
-            y: visible.midY - frameRect.height / 2
-        )
+        let origin: NSPoint
+        if hasRestoredFrame {
+            // Keep the window where it is, anchored at its top-left corner, so
+            // only the width visibly changes.
+            let current = window.frame
+            origin = NSPoint(x: current.minX, y: current.maxY - frameRect.height)
+        } else {
+            origin = NSPoint(
+                x: visible.midX - frameRect.width / 2,
+                y: visible.midY - frameRect.height / 2
+            )
+        }
         window.setFrame(NSRect(origin: origin, size: frameRect.size), display: true, animate: false)
     }
 
@@ -300,7 +311,9 @@ final class AppModel {
             return CGSize(width: w, height: h)
         case .pdf:
             guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return nil }
-            return page.bounds(for: .mediaBox).size
+            // Crop box matches what PDFKit renders, so the window matches the
+            // visible page exactly.
+            return page.bounds(for: .cropBox).size
         case .unsupported:
             return nil
         }
