@@ -313,7 +313,18 @@ final class AppModel {
             guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return nil }
             // Crop box matches what PDFKit renders, so the window matches the
             // visible page exactly.
-            return page.bounds(for: .cropBox).size
+            var size = page.bounds(for: .cropBox).size
+            // Multi-page: the viewer frames page 1 with an equal gray gutter on
+            // all four sides. Fold that gutter into the window's aspect ratio so
+            // the top and bottom margins come out equal to the left/right ones —
+            // otherwise the window is sized to the bare page and the bottom
+            // shows extra (the run-up to page 2) while the top does not.
+            if doc.pageCount > 1 {
+                let g = PeekPDFView.pageGutter
+                size.width += 2 * g
+                size.height += 2 * g
+            }
+            return size
         case .unsupported:
             return nil
         }
