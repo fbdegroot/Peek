@@ -78,12 +78,12 @@ struct PDFViewerRepresentable: NSViewRepresentable {
 }
 
 final class PeekPDFView: PDFView {
-    /// The single, uniform gray gap between elements of a multi-page document:
-    /// the same value shows left, right, above page 1, and between consecutive
-    /// pages. To keep the between-page gap from doubling (it would otherwise be
-    /// the bottom margin of one page plus the top margin of the next), the page
-    /// margins are asymmetric — full on top, zero on the bottom — see
-    /// `applyPageBreakMargins`.
+    /// The uniform gray gutter framing every page of a multi-page document: the
+    /// same value shows on all four sides of each page, so the first page's top
+    /// and the last page's bottom are framed identically to the left/right edges.
+    /// Because page-break margins apply to every page, the gap between two
+    /// consecutive pages is two gutters (one page's bottom + the next's top) —
+    /// Preview does the same. See `applyPageBreakMargins`.
     static let pageGutter: CGFloat = 14
 
     var onNavigate: ((NavigationDirection) -> Void)?
@@ -288,12 +288,15 @@ final class PeekPDFView: PDFView {
     private func applyPageBreakMargins() {
         let g = PeekPDFView.pageGutter
         let multiPage = (document?.pageCount ?? 0) > 1
-        // Full margin on top, none on the bottom: the gap between two pages is
-        // then one page's top margin only (`g`), not top + bottom (`2g`), so it
-        // matches the left/right gutter exactly. The top of page 1 is framed by
-        // its own top margin (revealed by snapToPageTop).
+        // Symmetric margin on all four sides so every page — including the first
+        // page's top and the last page's bottom — is framed by an equal gutter.
+        // The consequence is a two-gutter gap between consecutive pages (one
+        // page's bottom margin + the next's top), which is the only way to frame
+        // the outer edges equally with PDFKit's uniform per-page margins, and
+        // matches Preview's page separation. The top of page 1 is revealed by
+        // snapToPageTop.
         pageBreakMargins = multiPage
-            ? NSEdgeInsets(top: g, left: g, bottom: 0, right: g)
+            ? NSEdgeInsets(top: g, left: g, bottom: g, right: g)
             : NSEdgeInsetsZero
     }
 
