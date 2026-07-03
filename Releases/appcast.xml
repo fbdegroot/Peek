@@ -6,6 +6,18 @@
         <description>Latest Peek releases</description>
         <language>en</language>
         <item>
+            <title>Version 1.2.4</title>
+            <pubDate>vr, 03 jul. 2026 14:51:05 +0000</pubDate>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.2.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <enclosure
+                url="https://github.com/fbdegroot/Peek/releases/download/v1.2.4/Peek-1.2.4.dmg"
+                length="1961876"
+                type="application/octet-stream"
+                sparkle:edSignature="M10mikXN92mtQuP2mzUvxuC3Yk3CBY/FZ3tOtUZ+7IUIjY10NLEulexPWohRy09FSsoYAoP0y91IQfulMIiFDg=="/>
+        </item>
+        <item>
             <title>Version 1.2.3</title>
             <pubDate>do, 02 jul. 2026 18:19:15 +0000</pubDate>
             <sparkle:version>7</sparkle:version>
